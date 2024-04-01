@@ -51,7 +51,6 @@ import org.tensorflow.lite.examples.poseestimation.data.standup_judge
 
 class CameraSource(
     private var standup_judge_list:standup_judge,
-    private val Stand_up_count_TextView: TextView,
     private val surfaceView: SurfaceView,
     private val listener: CameraSourceListener? = null
 ) {
@@ -321,6 +320,11 @@ class CameraSource(
 
 
     private fun Stand_up_count_fun(persons: List<Person>) {//2024/03/17
+
+        //Stand_up_count_TextView.text = "41263"
+//        runOnUiThread {
+//            textView1.text = "New Text"
+//        }
         if (persons[0].score > standup_judge_list.MLscore_threshold) {
             //val currentTime = Calendar.getInstance().time
 
@@ -357,6 +361,7 @@ class CameraSource(
                 ((surfaceView.height - LEFT_ANKLE_y) - (surfaceView.height - LEFT_KNEE_y)).toDouble()
             )
             val left_foot_angle = angleBetweenVectors(lvector1, lvector2)
+
 //
 //            Stand_up_count_TextView.text =
 //                "41263"
@@ -395,7 +400,8 @@ class CameraSource(
 
                 if (flage && !standup_judge_list.Previous_status_standup) {
                     standup_judge_list.Count_Stand_up++
-                    Stand_up_count_TextView.text = standup_judge_list.Count_Stand_up.toString()
+                    listener?.onStand_up_countListener(standup_judge_list.Count_Stand_up.toString())
+                    //Stand_up_count_TextView.text = standup_judge_list.Count_Stand_up.toString()
                 }
 
                 if (flage) {
@@ -501,5 +507,7 @@ class CameraSource(
         fun onFPSListener(fps: Int)
 
         fun onDetectedInfo(personScore: Float?, poseLabels: List<Pair<String, Float>>?)
+
+        fun onStand_up_countListener(count_str: String)
     }
 }

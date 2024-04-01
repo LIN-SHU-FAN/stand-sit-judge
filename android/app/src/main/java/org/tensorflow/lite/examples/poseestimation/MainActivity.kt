@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         // keep screen on while app is running
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        Stand_up_count_TextView = findViewById(R.id.textView)
+        Stand_up_count_TextView = findViewById(R.id.textView1)
         tvScore = findViewById(R.id.tvScore)
         tvFPS = findViewById(R.id.tvFps)
         spnModel = findViewById(R.id.spnModel)
@@ -204,10 +204,11 @@ class MainActivity : AppCompatActivity() {
 
     // open camera
     private fun openCamera() {
+
         if (isCameraPermissionGranted()) {
             if (cameraSource == null) {
                 cameraSource =
-                    CameraSource(standup_judge_list,Stand_up_count_TextView,surfaceView, object : CameraSource.CameraSourceListener {
+                    CameraSource(standup_judge_list,surfaceView, object : CameraSource.CameraSourceListener {
                         override fun onFPSListener(fps: Int) {
                             tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
                         }
@@ -232,6 +233,14 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }
                         }
+                        override fun onStand_up_countListener(count_str: String) {
+                            //Stand_up_count_TextView.text = count_str
+                            runOnUiThread {
+                                Stand_up_count_TextView.text = count_str
+                            }
+                            Log.d("MyAppTag", "${count_str}")
+                            //tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
+                        }
 
                     }).apply {
                         prepareCamera()
@@ -240,6 +249,8 @@ class MainActivity : AppCompatActivity() {
                 lifecycleScope.launch(Dispatchers.Main) {
                     cameraSource?.initCamera()
                 }
+
+
             }
             createPoseEstimator()
         }
