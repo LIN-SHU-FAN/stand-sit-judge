@@ -22,6 +22,8 @@ import android.app.Dialog
 import android.content.pm.PackageManager
 import android.graphics.RectF
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.Process
 import android.view.SurfaceView
 import android.view.View
@@ -50,6 +52,8 @@ class MainActivity : AppCompatActivity() {
 
     //private var standup_judge_list= mutableListOf<standup_judge>()
     private var standup_judge_list = standup_judge()
+
+    //private var standup_judge_flag = false
     /** A [SurfaceView] for camera preview.   */
     private lateinit var surfaceView: SurfaceView
 
@@ -65,6 +69,7 @@ class MainActivity : AppCompatActivity() {
     private var device = Device.CPU
 
     private lateinit var Stand_up_count_TextView: TextView
+    private lateinit var TimetextView: TextView
     private lateinit var tvScore: TextView
     private lateinit var tvFPS: TextView
     private lateinit var spnDevice: Spinner
@@ -137,13 +142,18 @@ class MainActivity : AppCompatActivity() {
             isClassifyPose = isChecked
             isPoseClassifier()
         }
-
+//    //倒數要用的
+//    private var secondsElapsed = 0
+//    private val handler = Handler(Looper.getMainLooper())
+//    private lateinit var runnable: Runnable
+    //倒數要用的
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         // keep screen on while app is running
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         Stand_up_count_TextView = findViewById(R.id.textView1)
+        TimetextView = findViewById(R.id.timetextView)
         tvScore = findViewById(R.id.tvScore)
         tvFPS = findViewById(R.id.tvFps)
         spnModel = findViewById(R.id.spnModel)
@@ -163,16 +173,33 @@ class MainActivity : AppCompatActivity() {
             requestPermission()
         }
 
+//    runnable = object : Runnable {
+//        override fun run() {
+//            if (secondsElapsed > 0) {
+//                Stand_up_count_TextView.text = "倒數${secondsElapsed}秒"
+//                secondsElapsed--
+//                handler.postDelayed(this, 1000)
+//            }else{
+//                Stand_up_count_TextView.text = "開始"
+//                standup_judge_flag = true
+//            }
+//        }
+//    }
 //        val startbutton = findViewById<Button>(R.id.startbutton)
 //        startbutton.setOnClickListener {
+//            secondsElapsed = 5
+//            handler.removeCallbacks(runnable)
+//            handler.post(runnable)
+//
 //            // 这里可以处理点击事件，例如显示一个Toast消息
-//            Toast.makeText(this, "Button was clicked!", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "Button was clicked!$standup_judge_flag", Toast.LENGTH_SHORT).show()
 //            Log.d("MyAppTag", "585858585855")
 //        }
 //        val endbutton = findViewById<Button>(R.id.endbutton)
 //        endbutton.setOnClickListener {
+//            standup_judge_flag = false
 //            // 这里可以处理点击事件，例如显示一个Toast消息
-//            Toast.makeText(this, "Button was clicked797!", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "Button was clicked797!$standup_judge_flag", Toast.LENGTH_SHORT).show()
 //            Log.d("MyAppTag", "789789")
 //        }
     }
@@ -204,11 +231,12 @@ class MainActivity : AppCompatActivity() {
 
     // open camera
     private fun openCamera() {
-
+        val startbutton = findViewById<Button>(R.id.startbutton)
+        val endbutton = findViewById<Button>(R.id.endbutton)
         if (isCameraPermissionGranted()) {
             if (cameraSource == null) {
                 cameraSource =
-                    CameraSource(standup_judge_list,surfaceView, object : CameraSource.CameraSourceListener {
+                    CameraSource(startbutton,endbutton,standup_judge_list,surfaceView, object : CameraSource.CameraSourceListener {
                         override fun onFPSListener(fps: Int) {
                             tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
                         }
@@ -240,6 +268,12 @@ class MainActivity : AppCompatActivity() {
                             }
                             Log.d("MyAppTag", "${count_str}")
                             //tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
+                        }
+                        override fun ontimetextview(timetext: String){
+                            runOnUiThread {
+                                TimetextView.text = timetext
+                            }
+                            Log.d("MyAppTag", "${timetext}")
                         }
 
                     }).apply {

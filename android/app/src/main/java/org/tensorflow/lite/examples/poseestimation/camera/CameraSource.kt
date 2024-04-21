@@ -29,10 +29,13 @@ import android.hardware.camera2.CameraManager
 import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import android.util.Log
 import android.view.Surface
 import android.view.SurfaceView
+import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.tensorflow.lite.examples.poseestimation.VisualizationUtils
 import org.tensorflow.lite.examples.poseestimation.YuvToRgbConverter
@@ -50,6 +53,8 @@ import java.util.Calendar
 import org.tensorflow.lite.examples.poseestimation.data.standup_judge
 
 class CameraSource(
+    private val startbutton: Button,
+    private val endbutton: Button,
     private var standup_judge_list:standup_judge,
     private val surfaceView: SurfaceView,
     private val listener: CameraSourceListener? = null
@@ -60,7 +65,7 @@ class CameraSource(
         private const val PREVIEW_HEIGHT = 480
 
         /** Threshold for confidence score. */
-        private const val MIN_CONFIDENCE = .5f
+        private const val MIN_CONFIDENCE = .4f
         private const val TAG = "Camera Source"
     }
 
@@ -97,6 +102,7 @@ class CameraSource(
     /** [Handler] corresponding to [imageReaderThread] */
     private var imageReaderHandler: Handler? = null
     private var cameraId: String = ""
+
 
     suspend fun initCamera() {
         camera = openCamera(cameraManager, cameraId)
@@ -315,17 +321,71 @@ class CameraSource(
             listener?.onDetectedInfo(persons[0].score, classificationResult)
         }
         visualize(persons, flippedBitmap) // 确保这里也使用翻转后的位图
+
+        standup_judge_list.runnable = object : Runnable {
+            override fun run() {
+                if (standup_judge_list.secondsElapsed > 0 ) {
+                    listener?.ontimetextview("倒數${standup_judge_list.secondsElapsed}秒開始測驗")
+                    standup_judge_list.secondsElapsed--
+                    standup_judge_list.handler.postDelayed(this, 1000)
+                }else if(standup_judge_list.secondsElapsed == 0){
+                    listener?.ontimetextview("開始")
+                    standup_judge_list.standup_judge_flag = true
+
+                    //倒數30秒
+                    standup_judge_list.secondsElapsed2 = 30
+                    standup_judge_list.handler2.removeCallbacks(standup_judge_list.runnable2)
+                    standup_judge_list.handler2.post(standup_judge_list.runnable2)
+                }
+            }
+        }
+
+        standup_judge_list.runnable2 = object : Runnable {
+            override fun run() {
+                if (standup_judge_list.secondsElapsed2 > 0 ) {
+                    listener?.ontimetextview("倒數${standup_judge_list.secondsElapsed2}秒")
+                    standup_judge_list.secondsElapsed2--
+                    standup_judge_list.handler2.postDelayed(this, 1000)
+                }else if(standup_judge_list.secondsElapsed2 == 0){
+                    standup_judge_list.standup_judge_flag = false
+                    listener?.ontimetextview("測驗結束")
+                    listener?.onStand_up_countListener("共做了${standup_judge_list.Count_Stand_up}次")
+                    standup_judge_list.Count_Stand_up=0
+
+                }
+            }
+        }
+
+        startbutton.setOnClickListener {
+            standup_judge_list.secondsElapsed = 5
+            standup_judge_list.handler.removeCallbacks(standup_judge_list.runnable)
+            standup_judge_list.handler.post(standup_judge_list.runnable)
+            listener?.onStand_up_countListener("")
+            // 这里可以处理点击事件，例如显示一个Toast消息
+            //Toast.makeText(this, "Button was clicked!$standup_judge_flag", Toast.LENGTH_SHORT).show()
+            //Log.d("MyAppTag", "585858585855")
+        }
+        endbutton.setOnClickListener {
+            standup_judge_list.standup_judge_flag = false
+            standup_judge_list.secondsElapsed2 = 0
+
+            //Log.d("MyAppTag", "4564564")
+        }
         Stand_up_count_fun(persons)
     }
 
 
     private fun Stand_up_count_fun(persons: List<Person>) {//2024/03/17
-
-        //Stand_up_count_TextView.text = "41263"
-//        runOnUiThread {
-//            textView1.text = "New Text"
+//        startbutton.setOnClickListener {
+//            // 这里可以处理点击事件，例如显示一个Toast消息
+//            Log.d("MyAppTag", "585858585855")
 //        }
-        if (persons[0].score > standup_judge_list.MLscore_threshold) {
+//        endbutton.setOnClickListener {
+//            // 这里可以处理点击事件，例如显示一个Toast消息
+//            Log.d("MyAppTag", "4564564")
+//        }
+
+        if (persons[0].score > standup_judge_list.MLscore_threshold && standup_judge_list.standup_judge_flag) {
             //val currentTime = Calendar.getInstance().time
 
             val RIGHT_HIP_x = persons[0].keyPoints[12].coordinate.x
@@ -400,7 +460,7 @@ class CameraSource(
 
                 if (flage && !standup_judge_list.Previous_status_standup) {
                     standup_judge_list.Count_Stand_up++
-                    listener?.onStand_up_countListener(standup_judge_list.Count_Stand_up.toString())
+                    listener?.onStand_up_countListener(standup_judge_list.Count_Stand_up.toString()+"次")
                     //Stand_up_count_TextView.text = standup_judge_list.Count_Stand_up.toString()
                 }
 
@@ -509,5 +569,7 @@ class CameraSource(
         fun onDetectedInfo(personScore: Float?, poseLabels: List<Pair<String, Float>>?)
 
         fun onStand_up_countListener(count_str: String)
+
+        fun ontimetextview(timetext: String)
     }
 }

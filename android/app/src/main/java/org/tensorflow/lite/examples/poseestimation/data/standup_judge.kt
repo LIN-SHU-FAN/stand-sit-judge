@@ -17,6 +17,9 @@ limitations under the License.
 package org.tensorflow.lite.examples.poseestimation.data
 
 import android.graphics.RectF
+import android.os.Handler
+import android.os.Looper
+import androidx.annotation.Nullable
 
 data class standup_judge(
     var Previous_status_standup:Boolean = false,
@@ -25,8 +28,19 @@ data class standup_judge(
 
     var index: Int = 2 * 2 ,//2的倍數(因為要左右腳)
     var current_index: Int = 0,
-    var stand_angle_threshold: Double = 155.0,
-    var sit_angle_threshold: Double = 100.0,
+    var stand_angle_threshold: Double = 145.0,
+    var sit_angle_threshold: Double = 110.0,
     var time_interval_threshold: Double = 0.6, //若高於threshold才算起立
-    var MLscore_threshold: Double = 0.5
+    var MLscore_threshold: Double = 0.4,
+
+    //開始倒數要用的
+    var secondsElapsed:Int = 0,
+    val handler:Handler = Handler(Looper.getMainLooper()),
+    var runnable: Runnable = Runnable {},
+    var standup_judge_flag:Boolean = false,
+
+    //過程倒數要用的
+    var secondsElapsed2:Int = 0,
+    val handler2:Handler = Handler(Looper.getMainLooper()),
+    var runnable2: Runnable = Runnable {}
 )
